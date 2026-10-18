@@ -59,5 +59,31 @@ namespace WorkoutApi.Controllers
             Exercises.Add(exercise);
             return CreatedAtAction(nameof(GetById),new { id = exercise.Id },exercise);
         }
+        [HttpPut("{id}")]
+        public ActionResult Update(int id, CreateExerciseDto dto)
+        {
+            var exercise = Exercises.FirstOrDefault(e => e.Id == id);
+            if(exercise == null)
+            {
+                return NotFound();
+            }
+            exercise.Name = dto.Name;
+            exercise.MuscleGroup = dto.MuscleGroup;
+            return NoContent();
+        }
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var exercise = Exercises.FirstOrDefault(e => e.Id == id);
+
+            if (exercise is null)
+            {
+                return NotFound();
+            }
+
+            Exercises.Remove(exercise);
+
+            return NoContent();
+        }
     }
 }
