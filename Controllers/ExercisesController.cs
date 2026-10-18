@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WorkoutApi.Models;
 using WorkoutApi.DTOs;
+using WorkoutApi.Data;
 
 namespace WorkoutApi.Controllers
 {
@@ -9,36 +11,28 @@ namespace WorkoutApi.Controllers
     [ApiController]
     public class ExercisesController : ControllerBase
     {
-        private static readonly List<Exercise> Exercises =
-        [
-            new Exercise
-            {
-                Id = 1,
-                Name = "Pull-up",
-                MuscleGroup = "Back"
-            },
-            new Exercise
-            {
-                Id = 2,
-                Name = "Push-up",
-                MuscleGroup = "Chest"
-            }
-        ];
+        private readonly WorkoutContext _context;
+
+        public ExercisesController(WorkoutContext context)
+        {
+            _context = context;
+        }
 
         [HttpGet]
-        public ActionResult<IEnumerable<Exercise>> GetAll(string? muscleGroup)
+        public async Task<ActionResult<IEnumerable<Exercise>>> GetAll(string? muscleGroup)
         {
+            var exercises = await _context.Exercises.ToListAsync();
             if(muscleGroup == null)
             {
-                return Ok(Exercises);
+                return Ok(exercises);
             }
 
-            return Ok(Exercises.Where(e => e.MuscleGroup == muscleGroup));
+            return Ok(exercises.Where(e => e.MuscleGroup == muscleGroup));
         }
         [HttpGet("{id}")]
-        public ActionResult<Exercise> GetById(int id)
+        public async Task<ActionResult<Exercise>> GetById(int id)
         {
-            var exercise = Exercises.FirstOrDefault(e => e.Id == id);
+            var exercise = await _context.Exercises.FindAsync(id);
             if(exercise == null)
             {
                 return NotFound();
@@ -47,41 +41,45 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpPost]
-        public ActionResult<Exercise> Create(CreateExerciseDto dto)
+        public async Task<ActionResult<Exercise>> Create(CreateExerciseDto dto)
         {
             var exercise = new Exercise
             {
-                Id = Exercises.Count == 0 ? 1 : Exercises.Max(e => e.Id) + 1,
                 Name = dto.Name,
                 MuscleGroup = dto.MuscleGroup
             };
 
-            Exercises.Add(exercise);
+            _context.Exercises.Add(exercise);
+            await _context.SaveChangesAsync();
+
             return CreatedAtAction(nameof(GetById),new { id = exercise.Id },exercise);
         }
+
         [HttpPut("{id}")]
-        public ActionResult Update(int id, CreateExerciseDto dto)
+        public async Task<ActionResult> Update(int id, CreateExerciseDto dto)
         {
-            var exercise = Exercises.FirstOrDefault(e => e.Id == id);
+            var exercise = await _context.Exercises.FindAsync(id);
             if(exercise == null)
             {
                 return NotFound();
             }
             exercise.Name = dto.Name;
             exercise.MuscleGroup = dto.MuscleGroup;
+            await _context.SaveChangesAsync();
             return NoContent();
         }
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var exercise = Exercises.FirstOrDefault(e => e.Id == id);
+            var exercise = await _context.Exercises.FindAsync(id);
 
             if (exercise is null)
             {
                 return NotFound();
             }
 
-            Exercises.Remove(exercise);
+            _context.Exercises.Remove(exercise);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
