@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "w03mNvo/Xvo=",
+  "success": true,
+  "projectFilePath": "/home/rakitin28/WorkoutApi/WorkoutApi.csproj",
+  "expectedPackageFiles": [
+    "/home/rakitin28/.nuget/packages/microsoft.aspnetcore.openapi/10.0.12/microsoft.aspnetcore.openapi.10.0.12.nupkg.sha512",
+    "/home/rakitin28/.nuget/packages/microsoft.openapi/2.12.0/microsoft.openapi.2.12.0.nupkg.sha512"
+  ],
+  "logs": []
+}
