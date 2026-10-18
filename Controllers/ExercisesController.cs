@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using WorkoutApi.Models;
+using WorkoutApi.DTOs;
 
 namespace WorkoutApi.Controllers
 {
@@ -43,6 +44,20 @@ namespace WorkoutApi.Controllers
                 return NotFound();
             }
             return Ok(exercise);
+        }
+
+        [HttpPost]
+        public ActionResult<Exercise> Create(CreateExerciseDto dto)
+        {
+            var exercise = new Exercise
+            {
+                Id = Exercises.Count == 0 ? 1 : Exercises.Max(e => e.Id) + 1,
+                Name = dto.Name,
+                MuscleGroup = dto.MuscleGroup
+            };
+
+            Exercises.Add(exercise);
+            return CreatedAtAction(nameof(GetById),new { id = exercise.Id },exercise);
         }
     }
 }
