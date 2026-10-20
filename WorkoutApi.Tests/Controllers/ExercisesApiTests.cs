@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Xunit;
 using WorkoutApi.DTOs;
 
+namespace WorkoutApi.Tests.Controllers;
 public class ExercisesApiTests
 {
     [Fact]
