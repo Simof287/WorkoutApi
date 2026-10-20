@@ -18,10 +18,28 @@ namespace WorkoutApi.Controllers
             _context = context;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Exercise>>> GetAll(string? muscleGroup)
+        private static ExerciseResponseDto ToResponseDto(Exercise exercise)
         {
-            var exercises = await _context.Exercises.ToListAsync();
+            return new ExerciseResponseDto
+            {
+                Id = exercise.Id,
+                Name = exercise.Name,
+                MuscleGroup = exercise.MuscleGroup
+            };
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<ExerciseResponseDto>>> GetAll(string? muscleGroup)
+        {
+            var exercises = await _context.Exercises
+            .Select(e => new ExerciseResponseDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                MuscleGroup = e.MuscleGroup
+            })
+            .ToListAsync();
+
             if(muscleGroup == null)
             {
                 return Ok(exercises);
@@ -29,19 +47,20 @@ namespace WorkoutApi.Controllers
 
             return Ok(exercises.Where(e => e.MuscleGroup == muscleGroup));
         }
+
         [HttpGet("{id}")]
-        public async Task<ActionResult<Exercise>> GetById(int id)
+        public async Task<ActionResult<ExerciseResponseDto>> GetById(int id)
         {
             var exercise = await _context.Exercises.FindAsync(id);
             if(exercise == null)
             {
                 return NotFound();
             }
-            return Ok(exercise);
+            return Ok(ToResponseDto(exercise));
         }
 
         [HttpPost]
-        public async Task<ActionResult<Exercise>> Create(CreateExerciseDto dto)
+        public async Task<ActionResult<ExerciseResponseDto>> Create(CreateExerciseDto dto)
         {
             var exercise = new Exercise
             {
@@ -52,7 +71,7 @@ namespace WorkoutApi.Controllers
             _context.Exercises.Add(exercise);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById),new { id = exercise.Id },exercise);
+            return CreatedAtAction(nameof(GetById),new { id = exercise.Id },ToResponseDto(exercise));
         }
 
         [HttpPut("{id}")]
