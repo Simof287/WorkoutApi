@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/rakitin28/WorkoutApi/WorkoutApi.csproj": {}
+    "/home/rakitin28/WorkoutApiProject/WorkoutApi/WorkoutApi.csproj": {}
   },
   "projects": {
-    "/home/rakitin28/WorkoutApi/WorkoutApi.csproj": {
+    "/home/rakitin28/WorkoutApiProject/WorkoutApi/WorkoutApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/rakitin28/WorkoutApi/WorkoutApi.csproj",
+        "projectUniqueName": "/home/rakitin28/WorkoutApiProject/WorkoutApi/WorkoutApi.csproj",
         "projectName": "WorkoutApi",
-        "projectPath": "/home/rakitin28/WorkoutApi/WorkoutApi.csproj",
+        "projectPath": "/home/rakitin28/WorkoutApiProject/WorkoutApi/WorkoutApi.csproj",
         "packagesPath": "/home/rakitin28/.nuget/packages/",
-        "outputPath": "/home/rakitin28/WorkoutApi/obj/",
+        "outputPath": "/home/rakitin28/WorkoutApiProject/WorkoutApi/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/rakitin28/.nuget/NuGet/NuGet.Config"

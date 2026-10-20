@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "0njND44FyJM=",
+  "dgSpecHash": "wwviTneIKwo=",
   "success": true,
-  "projectFilePath": "/home/rakitin28/WorkoutApi/WorkoutApi.csproj",
+  "projectFilePath": "/home/rakitin28/WorkoutApiProject/WorkoutApi/WorkoutApi.csproj",
   "expectedPackageFiles": [
     "/home/rakitin28/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/home/rakitin28/.nuget/packages/microsoft.aspnetcore.openapi/10.0.12/microsoft.aspnetcore.openapi.10.0.12.nupkg.sha512",

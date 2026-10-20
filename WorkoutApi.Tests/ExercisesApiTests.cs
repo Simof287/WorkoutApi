@@ -1,0 +1,209 @@
+
+using System.Net;
+using System.Net.Http.Json;
+using Xunit;
+using WorkoutApi.DTOs;
+
+public class ExercisesApiTests
+{
+    [Fact]
+    public async Task CreateExercise_ReturnsCreatedAndCanBeRetrieved()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var dto = new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        };
+
+        var response = await client.PostAsJsonAsync(
+            "/api/exercises", dto);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var created = await response.Content
+            .ReadFromJsonAsync<ExerciseResponseDto>();
+
+        Assert.NotNull(created);
+        Assert.True(created.Id > 0);
+        Assert.Equal("Pull-up", created.Name);
+
+        var getResponse = await client.GetAsync(
+            $"/api/exercises/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetExercise_WhenIdDoesNotExist_ReturnsNotFound()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/api/exercises/999");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetAll_ReturnsExercises()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var dto = new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        };
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/exercises", dto);
+
+        createResponse.EnsureSuccessStatusCode();
+
+        var response = await client.GetAsync("/api/exercises");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var exercises = await response.Content
+            .ReadFromJsonAsync<List<ExerciseResponseDto>>();
+
+        Assert.NotNull(exercises);
+        Assert.Contains(exercises, e =>
+            e.Name == "Pull-up" && e.MuscleGroup == "Back");
+    }
+    [Fact]
+    public async Task UpdateExercise_ChangesExercise()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var createDto = new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        };
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/exercises", createDto);
+
+        var created = await createResponse.Content
+            .ReadFromJsonAsync<ExerciseResponseDto>();
+
+        Assert.NotNull(created);
+
+        var updateDto = new CreateExerciseDto
+        {
+            Name = "Chin-up",
+            MuscleGroup = "Biceps"
+        };
+
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/exercises/{created.Id}", updateDto);
+
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            updateResponse.StatusCode);
+
+        var getResponse = await client.GetAsync(
+            $"/api/exercises/{created.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        var updated = await getResponse.Content
+            .ReadFromJsonAsync<ExerciseResponseDto>();
+
+        Assert.NotNull(updated);
+        Assert.Equal("Chin-up", updated.Name);
+        Assert.Equal("Biceps", updated.MuscleGroup);
+    }
+
+    [Fact]
+    public async Task UpdateExercise_WhenIdDoesNotExist_ReturnsNotFound()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var dto = new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        };
+
+        var response = await client.PutAsJsonAsync(
+            "/api/exercises/999", dto);
+
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteExercise_RemovesExercise()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var dto = new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        };
+
+        var createResponse = await client.PostAsJsonAsync(
+            "/api/exercises", dto);
+
+        var created = await createResponse.Content
+            .ReadFromJsonAsync<ExerciseResponseDto>();
+
+        Assert.NotNull(created);
+
+        var deleteResponse = await client.DeleteAsync(
+            $"/api/exercises/{created.Id}");
+
+        Assert.Equal(
+            HttpStatusCode.NoContent,
+            deleteResponse.StatusCode);
+
+        var getResponse = await client.GetAsync(
+            $"/api/exercises/{created.Id}");
+
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            getResponse.StatusCode);
+    }
+    [Fact]
+    public async Task DeleteExercise_WhenIdDoesNotExist_ReturnsNotFound()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync("/api/exercises/999");
+
+        Assert.Equal(
+            HttpStatusCode.NotFound,
+            response.StatusCode);
+    }
+    [Fact]
+    public async Task CreateExercise_WithEmptyName_ReturnsBadRequest()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var client = factory.CreateClient();
+
+        var dto = new CreateExerciseDto
+        {
+            Name = "",
+            MuscleGroup = "Back"
+        };
+
+        var response = await client.PostAsJsonAsync(
+            "/api/exercises", dto);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+}

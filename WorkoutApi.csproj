@@ -15,4 +15,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
   </ItemGroup>
 
+  <ItemGroup>
+  <Compile Remove="WorkoutApi.Tests/**/*.cs" />
+  <Content Remove="WorkoutApi.Tests/**" />
+  <None Remove="WorkoutApi.Tests/**" />
+</ItemGroup>
+
 </Project>
