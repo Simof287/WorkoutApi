@@ -19,7 +19,7 @@ public class WorkoutsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> Create(
+    public async Task<ActionResult<WorkoutResponseDto>> Create(
         CreateWorkoutDto dto,
         CancellationToken cancellationToken)
     {
@@ -85,8 +85,8 @@ public class WorkoutsController : ControllerBase
             });
     }
 
-    [HttpGet("{id:int}")]
-    public async Task<ActionResult> GetById(
+    [HttpGet("{id}")]
+    public async Task<ActionResult<WorkoutResponseDto>> GetById(
         int id,
         CancellationToken cancellationToken)
     {
@@ -124,5 +124,50 @@ public class WorkoutsController : ControllerBase
                 }).ToList()
         });
     }
+
+    [HttpPut("{id}")]
+    public async Task<ActionResult> Update(
+        int id,
+        UpdateWorkoutDto dto,
+        CancellationToken cancellationToken)
+    {
+        var workout = await _context.Workouts
+            .FirstOrDefaultAsync(
+                w => w.Id == id,
+                cancellationToken);
+
+        if (workout is null)
+            return NotFound();
+        
+        workout.Date = dto.Date ?? workout.Date;
+        workout.Notes = dto.Notes ?? workout.Notes;
+        
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+
+    }
+    
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(
+        int id,
+        CancellationToken cancellationToken)
+    {
+        var workout = await _context.Workouts
+            .FirstOrDefaultAsync(
+                w => w.Id == id,
+                cancellationToken);
+
+        if (workout is null)
+            return NotFound();
+
+        _context.Workouts.Remove(workout);
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
 }
 

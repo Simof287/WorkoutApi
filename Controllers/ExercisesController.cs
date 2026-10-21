@@ -29,7 +29,9 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExerciseResponseDto>>> GetAll(string? muscleGroup)
+        public async Task<ActionResult<IEnumerable<ExerciseResponseDto>>> GetAll(
+            string? muscleGroup,
+            CancellationToken cancellationToken)
         {
             var exercises = await _context.Exercises
             .Select(e => new ExerciseResponseDto
@@ -38,9 +40,9 @@ namespace WorkoutApi.Controllers
                 Name = e.Name,
                 MuscleGroup = e.MuscleGroup
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
-            if(muscleGroup == null)
+            if(muscleGroup is null)
             {
                 return Ok(exercises);
             }
@@ -49,10 +51,12 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<ExerciseResponseDto>> GetById(int id)
+        public async Task<ActionResult<ExerciseResponseDto>> GetById(
+            int id,
+            CancellationToken cancellationToken)
         {
-            var exercise = await _context.Exercises.FindAsync(id);
-            if(exercise == null)
+            var exercise = await _context.Exercises.FindAsync(id,cancellationToken);
+            if(exercise is null)
             {
                 return NotFound();
             }
@@ -60,7 +64,9 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ExerciseResponseDto>> Create(CreateExerciseDto dto)
+        public async Task<ActionResult<ExerciseResponseDto>> Create(
+            CreateExerciseDto dto,
+            CancellationToken cancellationToken)
         {
             var exercise = new Exercise
             {
@@ -69,28 +75,33 @@ namespace WorkoutApi.Controllers
             };
 
             _context.Exercises.Add(exercise);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return CreatedAtAction(nameof(GetById),new { id = exercise.Id },ToResponseDto(exercise));
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, CreateExerciseDto dto)
+        public async Task<ActionResult> Update(
+            int id,
+            CancellationToken cancellationToken,
+            CreateExerciseDto dto)
         {
-            var exercise = await _context.Exercises.FindAsync(id);
-            if(exercise == null)
+            var exercise = await _context.Exercises.FindAsync(id,cancellationToken);
+            if(exercise is null)
             {
                 return NotFound();
             }
             exercise.Name = dto.Name;
             exercise.MuscleGroup = dto.MuscleGroup;
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
             return NoContent();
         }
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(
+            int id,
+            CancellationToken cancellationToken)
         {
-            var exercise = await _context.Exercises.FindAsync(id);
+            var exercise = await _context.Exercises.FindAsync(id,cancellationToken);
 
             if (exercise is null)
             {
@@ -98,7 +109,7 @@ namespace WorkoutApi.Controllers
             }
 
             _context.Exercises.Remove(exercise);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(cancellationToken);
 
             return NoContent();
         }
