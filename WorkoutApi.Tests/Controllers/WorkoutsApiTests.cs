@@ -212,6 +212,98 @@ public class WorkoutsApiTests
             HttpStatusCode.BadRequest,
             response.StatusCode);
     }
+    [Fact]
+public async Task CreateWorkout_WithDuplicateExerciseOrders_ReturnsBadRequest()
+{
+    using var factory = new CustomWebApplicationFactory();
+    using var client = factory.CreateClient();
+
+    var exerciseResponse = await client.PostAsJsonAsync(
+        "/api/exercises",
+        new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        });
+
+    var exercise = await exerciseResponse.Content
+        .ReadFromJsonAsync<ExerciseResponseDto>();
+
+    Assert.NotNull(exercise);
+
+    var response = await client.PostAsJsonAsync(
+        "/api/workouts",
+        new
+        {
+            exercises = new[]
+            {
+                new
+                {
+                    exerciseId = exercise.Id,
+                    order = 1,
+                    sets = new[]
+                    {
+                        new { repetitions = 8, weight = 20m }
+                    }
+                },
+                new
+                {
+                    exerciseId = exercise.Id,
+                    order = 1,
+                    sets = new[]
+                    {
+                        new { repetitions = 6, weight = 25m }
+                    }
+                }
+            }
+        });
+
+    Assert.Equal(
+        HttpStatusCode.BadRequest,
+        response.StatusCode);
+}
+
+[Fact]
+public async Task CreateWorkout_WithNegativeWeight_ReturnsBadRequest()
+{
+    using var factory = new CustomWebApplicationFactory();
+    using var client = factory.CreateClient();
+
+    var exerciseResponse = await client.PostAsJsonAsync(
+        "/api/exercises",
+        new CreateExerciseDto
+        {
+            Name = "Pull-up",
+            MuscleGroup = "Back"
+        });
+
+    var exercise = await exerciseResponse.Content
+        .ReadFromJsonAsync<ExerciseResponseDto>();
+
+    Assert.NotNull(exercise);
+
+    var response = await client.PostAsJsonAsync(
+        "/api/workouts",
+        new
+        {
+            exercises = new[]
+            {
+                new
+                {
+                    exerciseId = exercise.Id,
+                    order = 1,
+                    sets = new[]
+                    {
+                        new { repetitions = 8, weight = -5m }
+                    }
+                }
+            }
+        });
+
+    Assert.Equal(
+        HttpStatusCode.BadRequest,
+        response.StatusCode);
+}
 
     private sealed class CreatedWorkoutResponse
     {

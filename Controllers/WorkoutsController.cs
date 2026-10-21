@@ -23,6 +23,17 @@ public class WorkoutsController : ControllerBase
         CreateWorkoutDto dto,
         CancellationToken cancellationToken)
     {
+        var orders = dto.Exercises
+            .Select(e => e.Order)
+            .ToList();
+        
+        if (orders.Distinct().Count() != orders.Count)
+        {
+            return BadRequest(new
+            {
+                message = "L'ordine degli esercizi deve essere univoco."
+            });
+        }
         var exerciseIds = dto.Exercises
             .Select(e => e.ExerciseId)
             .Distinct()
