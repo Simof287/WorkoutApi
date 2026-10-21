@@ -66,7 +66,12 @@ public class WorkoutsController : ControllerBase
         return CreatedAtAction(
             nameof(GetById),
             new { id = workout.Id },
-            new { id = workout.Id });
+            new WorkoutResponseDto
+            {
+                Id = workout.Id,
+                Date = workout.Date,
+                Notes = workout.Notes
+            });
     }
 
     [HttpGet("{id:int}")]
@@ -87,24 +92,25 @@ public class WorkoutsController : ControllerBase
         if (workout is null)
             return NotFound();
 
-        return Ok(new
+        return Ok(new WorkoutResponseDto
         {
-            workout.Id,
-            workout.Date,
-            workout.Notes,
+            Id = workout.Id,
+            Date = workout.Date,
+            Notes = workout.Notes,
             Exercises = workout.Exercises
                 .OrderBy(e => e.Order)
-                .Select(e => new
+                .Select(e => new WorkoutExerciseResponseDto
                 {
-                    e.ExerciseId,
-                    Name = e.Exercise.Name,
-                    e.Order,
-                    Sets = e.Sets.Select(s => new
+                    ExerciseId = e.ExerciseId,
+                    ExerciseName = e.Exercise.Name,
+                    Order = e.Order,
+                    Sets = e.Sets.Select(s => new WorkoutSetResponseDto
                     {
-                        s.Repetitions,
-                        s.Weight
-                    })
-                })
+                        Repetitions = s.Repetitions,
+                        Weight = s.Weight
+                    }).ToList()
+
+                }).ToList()
         });
     }
 }
