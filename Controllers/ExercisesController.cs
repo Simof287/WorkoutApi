@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkoutApi.Models;
@@ -29,25 +30,44 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ExerciseResponseDto>>> GetAll(
-            string? muscleGroup,
-            CancellationToken cancellationToken)
+        public async Task<ActionResult<PagedResponseDto<ExerciseResponseDto>>> GetAll(
+            [FromQuery] string? muscleGroup,
+            CancellationToken cancellationToken,
+            [FromQuery, Range(1, int.MaxValue)] int page = 1,
+            [FromQuery, Range(1, 100)] int pageSize = 10)
         {
-            var exercises = await _context.Exercises
-            .Select(e => new ExerciseResponseDto
-            {
-                Id = e.Id,
-                Name = e.Name,
-                MuscleGroup = e.MuscleGroup
-            })
-            .ToListAsync(cancellationToken);
+            var query = _context.Exercises.AsNoTracking();
 
-            if(muscleGroup is null)
+            if (!string.IsNullOrWhiteSpace(muscleGroup))
             {
-                return Ok(exercises);
+                query = query.Where(e => e.MuscleGroup == muscleGroup);
             }
 
-            return Ok(exercises.Where(e => e.MuscleGroup == muscleGroup));
+            var totalCount = await query
+                .CountAsync(cancellationToken);
+
+            var exercises = await query
+                .OrderBy(e => e.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(e => new ExerciseResponseDto
+                {
+                    Id = e.Id,
+                    Name = e.Name,
+                    MuscleGroup = e.MuscleGroup
+                })
+                .ToListAsync(cancellationToken);
+
+            var response = new PagedResponseDto<ExerciseResponseDto>
+                {
+                    Items = exercises,
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalCount = totalCount,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                };
+
+            return Ok(response);
         }
 
         [HttpGet("{id}")]
