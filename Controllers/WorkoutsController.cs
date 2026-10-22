@@ -1,6 +1,7 @@
-
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SQLitePCL;
 using WorkoutApi.Data;
 using WorkoutApi.DTOs;
 using WorkoutApi.Models;
@@ -83,6 +84,64 @@ public class WorkoutsController : ControllerBase
                 Date = workout.Date,
                 Notes = workout.Notes
             });
+    }
+    [HttpGet]
+    public async Task<ActionResult<PagedResponseDto<WorkoutResponseDto>>>GetAll(
+        CancellationToken cancellationToken,
+        [FromQuery, Range(1, int.MaxValue)] int page = 1,
+        [FromQuery, Range(1, 100)] int pageSize = 10
+    )
+    {
+        var query = _context.Workouts.AsNoTracking();
+
+        var totalCount = await query
+                .CountAsync(cancellationToken);
+
+        var workouts = await query
+            .AsNoTracking()
+            .OrderByDescending(w => w.Date)
+            .ThenByDescending(w => w.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Include(w => w.Exercises)
+                .ThenInclude(we => we.Exercise)
+            .Include(w => w.Exercises)
+                .ThenInclude(we => we.Sets)
+            .ToListAsync(cancellationToken);
+
+        var items = workouts.Select(w => new WorkoutResponseDto
+        {
+            Id = w.Id,
+            Date = w.Date,
+            Notes = w.Notes,
+            Exercises = w.Exercises
+                .OrderBy(we => we.Order)
+                .Select(we => new WorkoutExerciseResponseDto
+                {
+                    ExerciseId = we.ExerciseId,
+                    ExerciseName = we.Exercise.Name,
+                    Order = we.Order,
+                    Sets = we.Sets
+                        .Select(s => new WorkoutSetResponseDto
+                        {
+                            Repetitions = s.Repetitions,
+                            Weight = s.Weight
+                        })
+                        .ToList()
+                })
+                .ToList()
+        }).ToList();
+
+        var response = new PagedResponseDto<WorkoutResponseDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+
+        return Ok(response);
     }
 
     [HttpGet("{id}")]

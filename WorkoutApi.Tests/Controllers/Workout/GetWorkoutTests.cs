@@ -1,118 +1,193 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using WorkoutApi.DTOs;
+using Xunit;
 
-namespace WorkoutApi.Tests.Controllers.Workout;
+namespace WorkoutApi.Tests.Controllers.Workouts;
 
-public class GetWorkoutTests
+public class GetWorkoutsTests : IDisposable
 {
-        [Fact]
-    public async Task GetWorkout_AfterCreation_ReturnsExercisesAndSets()
-    {
-        using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+    private readonly CustomWebApplicationFactory _factory;
+    private readonly HttpClient _client;
 
-        var exerciseResponse = await client.PostAsJsonAsync(
+    public GetWorkoutsTests()
+    {
+        _factory = new CustomWebApplicationFactory();
+        _client = _factory.CreateClient();
+    }
+
+    private async Task<int> CreateExerciseAsync()
+    {
+        var response = await _client.PostAsJsonAsync(
             "/api/exercises",
-            new CreateExerciseDto
+            new
             {
-                Name = "Pull-up",
-                MuscleGroup = "Back"
+                Name = "Squat",
+                MuscleGroup = "Gambe"
             });
 
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
+        response.EnsureSuccessStatusCode();
 
-        Assert.NotNull(exercise);
+        var result =
+            await response.Content.ReadFromJsonAsync<JsonElement>();
 
-        var createResponse = await client.PostAsJsonAsync(
+        return result.GetProperty("id").GetInt32();
+    }
+
+    private async Task CreateWorkoutAsync(
+        int exerciseId,
+        DateTime date)
+    {
+        var response = await _client.PostAsJsonAsync(
             "/api/workouts",
             new
             {
-                notes = "Test workout",
-                exercises = new[]
+                Date = date,
+                Notes = "Test workout",
+                Exercises = new[]
                 {
                     new
                     {
-                        exerciseId = exercise.Id,
-                        order = 1,
-                        sets = new[]
+                        ExerciseId = exerciseId,
+                        Order = 1,
+                        Sets = new[]
                         {
-                            new { repetitions = 8, weight = 20m },
-                            new { repetitions = 6, weight = 25m }
+                            new
+                            {
+                                Repetitions = 10,
+                                Weight = 20m
+                            }
                         }
                     }
                 }
             });
 
-        Assert.Equal(
-            HttpStatusCode.Created,
-            createResponse.StatusCode);
-
-        var created = await createResponse.Content
-            .ReadFromJsonAsync<CreatedWorkoutResponse>();
-
-        Assert.NotNull(created);
-
-        var getResponse = await client.GetAsync(
-            $"/api/workouts/{created.Id}");
-
-        Assert.Equal(
-            HttpStatusCode.OK,
-            getResponse.StatusCode);
-
-        using var json = JsonDocument.Parse(
-            await getResponse.Content.ReadAsStringAsync());
-
-        var root = json.RootElement;
-
-        Assert.Equal(
-            "Test workout",
-            root.GetProperty("notes").GetString());
-
-        var exercises = root.GetProperty("exercises");
-
-        Assert.Equal(1, exercises.GetArrayLength());
-
-        var workoutExercise = exercises[0];
-
-        Assert.Equal(
-            "Pull-up",
-            workoutExercise.GetProperty("exerciseName").GetString());
-
-        var sets = workoutExercise.GetProperty("sets");
-
-        Assert.Equal(2, sets.GetArrayLength());
-        Assert.Equal(
-            8,
-            sets[0].GetProperty("repetitions").GetInt32());
-        Assert.Equal(
-            20m,
-            sets[0].GetProperty("weight").GetDecimal());
-        Assert.Equal(
-            6,
-            sets[1].GetProperty("repetitions").GetInt32());
-        Assert.Equal(
-            25m,
-            sets[1].GetProperty("weight").GetDecimal());
+        Assert.True(
+            response.IsSuccessStatusCode,
+            await response.Content.ReadAsStringAsync());
     }
+
     [Fact]
-    public async Task GetWorkout_WhenIdDoesNotExist_ReturnsNotFound()
+    public async Task GetWorkouts_WithoutParameters_ReturnsFirstPage()
     {
-        using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        var exerciseId = await CreateExerciseAsync();
 
-        var response = await client.GetAsync("/api/workouts/999");
+        for (var i = 1; i <= 12; i++)
+        {
+            await CreateWorkoutAsync(
+                exerciseId,
+                new DateTime(2026, 1, i, 10, 0, 0, DateTimeKind.Utc));
+        }
 
+        var response = await _client.GetAsync("/api/workouts");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result =
+            await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(1, result.GetProperty("page").GetInt32());
+        Assert.Equal(10, result.GetProperty("pageSize").GetInt32());
+        Assert.Equal(12, result.GetProperty("totalCount").GetInt32());
+        Assert.Equal(2, result.GetProperty("totalPages").GetInt32());
+        Assert.Equal(10, result.GetProperty("items").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task GetWorkouts_SecondPage_ReturnsRemainingItems()
+    {
+        var exerciseId = await CreateExerciseAsync();
+
+        for (var i = 1; i <= 5; i++)
+        {
+            await CreateWorkoutAsync(
+                exerciseId,
+                new DateTime(2026, 2, i, 10, 0, 0, DateTimeKind.Utc));
+        }
+
+        var response = await _client.GetAsync(
+            "/api/workouts?page=2&pageSize=2");
+
+        var result =
+            await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(2, result.GetProperty("page").GetInt32());
+        Assert.Equal(2, result.GetProperty("items").GetArrayLength());
+        Assert.Equal(5, result.GetProperty("totalCount").GetInt32());
+        Assert.Equal(3, result.GetProperty("totalPages").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetWorkouts_ReturnsWorkoutsOrderedByDateDescending()
+    {
+        var exerciseId = await CreateExerciseAsync();
+
+        for (var i = 1; i <= 3; i++)
+        {
+            await CreateWorkoutAsync(
+                exerciseId,
+                new DateTime(2026, 3, i, 10, 0, 0, DateTimeKind.Utc));
+        }
+
+        var response = await _client.GetAsync("/api/workouts");
+        var result =
+            await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        var dates = result.GetProperty("items")
+            .EnumerateArray()
+            .Select(item => item.GetProperty("date").GetDateTime())
+            .ToArray();
+
+        Assert.Equal(3, dates.Length);
+        Assert.True(dates[0] >= dates[1]);
+        Assert.True(dates[1] >= dates[2]);
+    }
+
+    [Fact]
+    public async Task GetWorkouts_IncludesExercisesAndSets()
+    {
+        var exerciseId = await CreateExerciseAsync();
+
+        await CreateWorkoutAsync(
+            exerciseId,
+            new DateTime(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc));
+
+        var response = await _client.GetAsync("/api/workouts");
+        var result =
+            await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        var workout = result.GetProperty("items")[0];
+        var exercises = workout.GetProperty("exercises");
+
+        Assert.NotEmpty(exercises.EnumerateArray());
+
+        var exercise = exercises[0];
         Assert.Equal(
-            HttpStatusCode.NotFound,
-            response.StatusCode);
+            exerciseId,
+            exercise.GetProperty("exerciseId").GetInt32());
+
+        var sets = exercise.GetProperty("sets");
+        Assert.Equal(1, sets.GetArrayLength());
+        Assert.Equal(10, sets[0].GetProperty("repetitions").GetInt32());
+        Assert.Equal(20, sets[0].GetProperty("weight").GetDecimal());
     }
 
-    private sealed class CreatedWorkoutResponse
+    [Theory]
+    [InlineData("?page=0")]
+    [InlineData("?page=-1")]
+    [InlineData("?pageSize=0")]
+    [InlineData("?pageSize=101")]
+    public async Task GetWorkouts_InvalidPagination_ReturnsBadRequest(
+        string query)
     {
-    public int Id { get; set; }
+        var response = await _client.GetAsync($"/api/workouts{query}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    public void Dispose()
+    {
+        _client.Dispose();
+        _factory.Dispose();
+    }
 }
