@@ -1,10 +1,11 @@
 using System;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WorkoutApi.Models;
 
 namespace WorkoutApi.Data;
 
-public class WorkoutContext : DbContext
+public class WorkoutContext : IdentityDbContext<ApplicationUser>
 {
     public WorkoutContext(DbContextOptions<WorkoutContext> options) : base(options){}
     public DbSet<Exercise> Exercises => Set<Exercise>();
@@ -15,6 +16,13 @@ public class WorkoutContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Workout>()
+            .HasOne(w => w.User)
+            .WithMany()
+            .HasForeignKey(w => w.UserId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<WorkoutExercise>()
             .HasOne(we => we.Workout)

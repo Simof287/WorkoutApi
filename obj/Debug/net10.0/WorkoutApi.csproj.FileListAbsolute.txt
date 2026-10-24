@@ -146,3 +146,16 @@
 /home/rakitin28/WorkoutApiProject/WorkoutApi/obj/Debug/net10.0/WorkoutApi.pdb
 /home/rakitin28/WorkoutApiProject/WorkoutApi/obj/Debug/net10.0/WorkoutApi.genruntimeconfig.cache
 /home/rakitin28/WorkoutApiProject/WorkoutApi/obj/Debug/net10.0/ref/WorkoutApi.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Swashbuckle.AspNetCore.Swagger.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Swashbuckle.AspNetCore.SwaggerGen.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Swashbuckle.AspNetCore.SwaggerUI.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.Bcl.Cryptography.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.IdentityModel.Abstractions.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.IdentityModel.JsonWebTokens.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.IdentityModel.Logging.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/Microsoft.IdentityModel.Tokens.dll
+/home/rakitin28/WorkoutApiProject/WorkoutApi/bin/Debug/net10.0/System.IdentityModel.Tokens.Jwt.dll

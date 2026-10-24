@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using WorkoutApi.DTOs;
+using WorkoutApi.Tests.Helpers;
 
 namespace WorkoutApi.Tests.Controllers.Workout;
 
@@ -11,8 +12,8 @@ public class DeleteWorkoutTests
     public async Task DeleteWorkout_RemovesWorkoutButKeepsExercise()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
-
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var client = testClient.Client;
         
         var exerciseResponse = await client.PostAsJsonAsync(
             "/api/exercises",
@@ -74,7 +75,8 @@ public class DeleteWorkoutTests
     public async Task DeleteWorkout_WhenIdDoesNotExist_ReturnsNotFound()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var client = testClient.Client;
 
         var response = await client.DeleteAsync("/api/workouts/999");
 

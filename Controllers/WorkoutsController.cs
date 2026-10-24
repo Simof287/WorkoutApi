@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SQLitePCL;
@@ -9,6 +11,7 @@ using WorkoutApi.Models;
 namespace WorkoutApi.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class WorkoutsController : ControllerBase
 {
@@ -24,6 +27,10 @@ public class WorkoutsController : ControllerBase
         CreateWorkoutDto dto,
         CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return Unauthorized();
+
         var orders = dto.Exercises
             .Select(e => e.Order)
             .ToList();
@@ -55,6 +62,7 @@ public class WorkoutsController : ControllerBase
 
         var workout = new Workout
         {
+            UserId = userId,
             Date = dto.Date ?? DateTime.UtcNow,
             Notes = dto.Notes,
             Exercises = dto.Exercises.Select(e =>
@@ -92,7 +100,13 @@ public class WorkoutsController : ControllerBase
         [FromQuery, Range(1, 100)] int pageSize = 10
     )
     {
-        var query = _context.Workouts.AsNoTracking();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return Unauthorized();
+
+        var query = _context.Workouts
+            .AsNoTracking()
+            .Where(w => w.UserId == userId);
 
         var totalCount = await query
                 .CountAsync(cancellationToken);
@@ -149,6 +163,10 @@ public class WorkoutsController : ControllerBase
         int id,
         CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return Unauthorized();
+
         var workout = await _context.Workouts
             .AsNoTracking()
             .Include(w => w.Exercises)
@@ -156,7 +174,7 @@ public class WorkoutsController : ControllerBase
             .Include(w => w.Exercises)
                 .ThenInclude(e => e.Sets)
             .FirstOrDefaultAsync(
-                w => w.Id == id,
+                w => w.Id == id && w.UserId == userId,
                 cancellationToken);
 
         if (workout is null)
@@ -190,9 +208,13 @@ public class WorkoutsController : ControllerBase
         UpdateWorkoutDto dto,
         CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return Unauthorized();
+
         var workout = await _context.Workouts
             .FirstOrDefaultAsync(
-                w => w.Id == id,
+                w => w.Id == id && w.UserId == userId,
                 cancellationToken);
 
         if (workout is null)
@@ -213,9 +235,13 @@ public class WorkoutsController : ControllerBase
         int id,
         CancellationToken cancellationToken)
     {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (userId is null)
+            return Unauthorized();
+
         var workout = await _context.Workouts
             .FirstOrDefaultAsync(
-                w => w.Id == id,
+                w => w.Id == id && w.UserId == userId,
                 cancellationToken);
 
         if (workout is null)
@@ -229,4 +255,3 @@ public class WorkoutsController : ControllerBase
     }
 
 }
-

@@ -2,23 +2,16 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit;
+using WorkoutApi.DTOs;
+using WorkoutApi.Tests.Helpers;
 
 namespace WorkoutApi.Tests.Controllers.Workouts;
 
-public class GetWorkoutsTests : IDisposable
+public class GetWorkoutsTests
 {
-    private readonly CustomWebApplicationFactory _factory;
-    private readonly HttpClient _client;
-
-    public GetWorkoutsTests()
+    private static async Task<int> CreateExerciseAsync(HttpClient client)
     {
-        _factory = new CustomWebApplicationFactory();
-        _client = _factory.CreateClient();
-    }
-
-    private async Task<int> CreateExerciseAsync()
-    {
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             "/api/exercises",
             new
             {
@@ -35,10 +28,11 @@ public class GetWorkoutsTests : IDisposable
     }
 
     private async Task CreateWorkoutAsync(
+        HttpClient client,
         int exerciseId,
         DateTime date)
     {
-        var response = await _client.PostAsJsonAsync(
+        var response = await client.PostAsJsonAsync(
             "/api/workouts",
             new
             {
@@ -70,16 +64,20 @@ public class GetWorkoutsTests : IDisposable
     [Fact]
     public async Task GetWorkouts_WithoutParameters_ReturnsFirstPage()
     {
-        var exerciseId = await CreateExerciseAsync();
+        using var factory = new CustomWebApplicationFactory();
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var client = testClient.Client;
+        var exerciseId = await CreateExerciseAsync(client);
 
         for (var i = 1; i <= 12; i++)
         {
             await CreateWorkoutAsync(
+                client,
                 exerciseId,
                 new DateTime(2026, 1, i, 10, 0, 0, DateTimeKind.Utc));
         }
 
-        var response = await _client.GetAsync("/api/workouts");
+        var response = await client.GetAsync("/api/workouts");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -96,16 +94,20 @@ public class GetWorkoutsTests : IDisposable
     [Fact]
     public async Task GetWorkouts_SecondPage_ReturnsRemainingItems()
     {
-        var exerciseId = await CreateExerciseAsync();
+        using var factory = new CustomWebApplicationFactory();
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var client = testClient.Client;
+        var exerciseId = await CreateExerciseAsync(client);
 
         for (var i = 1; i <= 5; i++)
         {
             await CreateWorkoutAsync(
+                client,
                 exerciseId,
                 new DateTime(2026, 2, i, 10, 0, 0, DateTimeKind.Utc));
         }
 
-        var response = await _client.GetAsync(
+        var response = await client.GetAsync(
             "/api/workouts?page=2&pageSize=2");
 
         var result =
@@ -120,16 +122,20 @@ public class GetWorkoutsTests : IDisposable
     [Fact]
     public async Task GetWorkouts_ReturnsWorkoutsOrderedByDateDescending()
     {
-        var exerciseId = await CreateExerciseAsync();
+        using var factory = new CustomWebApplicationFactory();
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var client = testClient.Client;
+        var exerciseId = await CreateExerciseAsync(client);
 
         for (var i = 1; i <= 3; i++)
         {
             await CreateWorkoutAsync(
+                client,
                 exerciseId,
                 new DateTime(2026, 3, i, 10, 0, 0, DateTimeKind.Utc));
         }
 
-        var response = await _client.GetAsync("/api/workouts");
+        var response = await client.GetAsync("/api/workouts");
         var result =
             await response.Content.ReadFromJsonAsync<JsonElement>();
 
@@ -146,13 +152,17 @@ public class GetWorkoutsTests : IDisposable
     [Fact]
     public async Task GetWorkouts_IncludesExercisesAndSets()
     {
-        var exerciseId = await CreateExerciseAsync();
+        using var factory = new CustomWebApplicationFactory();
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var client = testClient.Client;
+        var exerciseId = await CreateExerciseAsync(client);
 
         await CreateWorkoutAsync(
+            client,
             exerciseId,
             new DateTime(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc));
 
-        var response = await _client.GetAsync("/api/workouts");
+        var response = await client.GetAsync("/api/workouts");
         var result =
             await response.Content.ReadFromJsonAsync<JsonElement>();
 
@@ -172,6 +182,52 @@ public class GetWorkoutsTests : IDisposable
         Assert.Equal(20, sets[0].GetProperty("weight").GetDecimal());
     }
 
+    [Fact]
+    public async Task GetWorkouts_OnlyReturnsCurrentUsersWorkouts()
+    {
+        using var factory = new CustomWebApplicationFactory();
+        using var owner = await AuthenticatedTestClient.CreateAsync(factory);
+        using var otherUser = await AuthenticatedTestClient.CreateAsync(factory);
+
+        var exerciseId = await CreateExerciseAsync(owner.Client);
+        var workoutResponse = await owner.Client.PostAsJsonAsync(
+            "/api/workouts",
+            new
+            {
+                notes = "Private workout",
+                exercises = new[]
+                {
+                    new
+                    {
+                        exerciseId,
+                        order = 1,
+                        sets = new[] { new { repetitions = 8, weight = 20m } }
+                    }
+                }
+            });
+        workoutResponse.EnsureSuccessStatusCode();
+        var workout = await workoutResponse.Content
+            .ReadFromJsonAsync<JsonElement>();
+        var workoutId = workout.GetProperty("id").GetInt32();
+
+        var listResponse = await otherUser.Client.GetAsync("/api/workouts");
+        var list = await listResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, list.GetProperty("totalCount").GetInt32());
+
+        var getResponse = await otherUser.Client.GetAsync(
+            $"/api/workouts/{workoutId}");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+
+        var updateResponse = await otherUser.Client.PutAsJsonAsync(
+            $"/api/workouts/{workoutId}",
+            new UpdateWorkoutDto { Notes = "Changed by another user" });
+        Assert.Equal(HttpStatusCode.NotFound, updateResponse.StatusCode);
+
+        var deleteResponse = await otherUser.Client.DeleteAsync(
+            $"/api/workouts/{workoutId}");
+        Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
+    }
+
     [Theory]
     [InlineData("?page=0")]
     [InlineData("?page=-1")]
@@ -180,14 +236,11 @@ public class GetWorkoutsTests : IDisposable
     public async Task GetWorkouts_InvalidPagination_ReturnsBadRequest(
         string query)
     {
-        var response = await _client.GetAsync($"/api/workouts{query}");
+        using var factory = new CustomWebApplicationFactory();
+        using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
+        var response = await testClient.Client.GetAsync($"/api/workouts{query}");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    public void Dispose()
-    {
-        _client.Dispose();
-        _factory.Dispose();
-    }
 }

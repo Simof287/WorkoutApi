@@ -21,6 +21,12 @@ public class CustomWebApplicationFactory
     protected override void ConfigureWebHost(
         IWebHostBuilder builder)
     {
+        builder.UseSetting("Jwt:Issuer", "WorkoutApi.Tests");
+        builder.UseSetting("Jwt:Audience", "WorkoutApi.Tests");
+        builder.UseSetting(
+            "Jwt:SigningKey",
+            "WorkoutApi.Tests.Signing.Key.Must.Be.At.Least.32.Bytes.Long");
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<DbContextOptions<WorkoutContext>>();
