@@ -30,6 +30,60 @@ public class AuthController : ControllerBase
     }
 
     [AllowAnonymous]
+    [HttpPost("register")]
+    [ProducesResponseType<RegisterResponseDto>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<RegisterResponseDto>> Register(
+        RegisterRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var user = new ApplicationUser
+        {
+            UserName = request.UserName,
+            Email = request.Email
+        };
+
+        var result = await _userManager.CreateAsync(user, request.Password);
+        if (result.Succeeded)
+        {
+            return StatusCode(
+                StatusCodes.Status201Created,
+                new RegisterResponseDto
+                {
+                    Message = "Account created. You can now log in."
+                });
+        }
+
+        if (result.Errors.Any(error =>
+                error.Code is "DuplicateEmail" or "DuplicateUserName"))
+        {
+            return Conflict(Problem(
+                title: "Account already exists",
+                detail: "The email address or username is already in use.",
+                statusCode: StatusCodes.Status409Conflict));
+        }
+
+        var errors = result.Errors
+            .GroupBy(error => error.Code.StartsWith(
+                "Password",
+                StringComparison.Ordinal)
+                ? "password"
+                : error.Code.StartsWith(
+                    "InvalidEmail",
+                    StringComparison.Ordinal)
+                    ? "email"
+                    : "registration")
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(error => error.Description).ToArray());
+
+        return BadRequest(new ValidationProblemDetails(errors));
+    }
+
+    [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType<LoginResponseDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

@@ -8,6 +8,7 @@ using WorkoutApi.Data;
 using WorkoutApi.DTOs;
 using WorkoutApi.Models;
 
+
 namespace WorkoutApi.Controllers;
 
 [ApiController]
