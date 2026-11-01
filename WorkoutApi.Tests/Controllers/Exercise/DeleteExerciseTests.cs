@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Xunit;
 using WorkoutApi.DTOs;
+using WorkoutApi.Tests.Helpers;
 
 namespace WorkoutApi.Tests.Controllers.Exercise;
 
@@ -11,7 +12,8 @@ public class DeleteExerciseTests
     public async Task DeleteExercise_RemovesExercise()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var dto = new CreateExerciseDto
         {
@@ -45,7 +47,8 @@ public class DeleteExerciseTests
     public async Task DeleteExercise_WhenIdDoesNotExist_ReturnsNotFound()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var response = await client.DeleteAsync("/api/exercises/999");
 

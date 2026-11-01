@@ -18,22 +18,10 @@ public class CreateWorkoutTests
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
 
-        var exerciseResponse = await client.PostAsJsonAsync(
-            "/api/exercises",
-            new CreateExerciseDto
-            {
-                Name = "Pull-up",
-                MuscleGroup = "Back"
-            });
-
-        Assert.Equal(
-            HttpStatusCode.Created,
-            exerciseResponse.StatusCode);
-
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
-
-        Assert.NotNull(exercise);
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Pull-up",
+            "Back");
 
         var workoutResponse = await client.PostAsJsonAsync(
             "/api/workouts",
@@ -130,18 +118,10 @@ public class CreateWorkoutTests
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
     
-        var exerciseResponse = await client.PostAsJsonAsync(
-            "/api/exercises",
-            new CreateExerciseDto
-            {
-                Name = "Pull-up",
-                MuscleGroup = "Back"
-            });
-    
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
-    
-        Assert.NotNull(exercise);
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Pull-up",
+            "Back");
     
         var response = await client.PostAsJsonAsync(
             "/api/workouts",
@@ -182,18 +162,10 @@ public class CreateWorkoutTests
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
     
-        var exerciseResponse = await client.PostAsJsonAsync(
-            "/api/exercises",
-            new CreateExerciseDto
-            {
-                Name = "Pull-up",
-                MuscleGroup = "Back"
-            });
-    
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
-    
-        Assert.NotNull(exercise);
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Pull-up",
+            "Back");
     
         var response = await client.PostAsJsonAsync(
             "/api/workouts",

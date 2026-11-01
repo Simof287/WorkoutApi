@@ -9,22 +9,15 @@ namespace WorkoutApi.Tests.Controllers.Workouts;
 
 public class GetWorkoutsTests
 {
-    private static async Task<int> CreateExerciseAsync(HttpClient client)
+    private static async Task<int> CreateExerciseAsync(
+        CustomWebApplicationFactory factory)
     {
-        var response = await client.PostAsJsonAsync(
-            "/api/exercises",
-            new
-            {
-                Name = "Squat",
-                MuscleGroup = "Gambe"
-            });
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Squat",
+            "Gambe");
 
-        response.EnsureSuccessStatusCode();
-
-        var result =
-            await response.Content.ReadFromJsonAsync<JsonElement>();
-
-        return result.GetProperty("id").GetInt32();
+        return exercise.Id;
     }
 
     private async Task CreateWorkoutAsync(
@@ -67,7 +60,7 @@ public class GetWorkoutsTests
         using var factory = new CustomWebApplicationFactory();
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
-        var exerciseId = await CreateExerciseAsync(client);
+        var exerciseId = await CreateExerciseAsync(factory);
 
         for (var i = 1; i <= 12; i++)
         {
@@ -97,7 +90,7 @@ public class GetWorkoutsTests
         using var factory = new CustomWebApplicationFactory();
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
-        var exerciseId = await CreateExerciseAsync(client);
+        var exerciseId = await CreateExerciseAsync(factory);
 
         for (var i = 1; i <= 5; i++)
         {
@@ -125,7 +118,7 @@ public class GetWorkoutsTests
         using var factory = new CustomWebApplicationFactory();
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
-        var exerciseId = await CreateExerciseAsync(client);
+        var exerciseId = await CreateExerciseAsync(factory);
 
         for (var i = 1; i <= 3; i++)
         {
@@ -155,7 +148,7 @@ public class GetWorkoutsTests
         using var factory = new CustomWebApplicationFactory();
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
-        var exerciseId = await CreateExerciseAsync(client);
+        var exerciseId = await CreateExerciseAsync(factory);
 
         await CreateWorkoutAsync(
             client,
@@ -189,7 +182,7 @@ public class GetWorkoutsTests
         using var owner = await AuthenticatedTestClient.CreateAsync(factory);
         using var otherUser = await AuthenticatedTestClient.CreateAsync(factory);
 
-        var exerciseId = await CreateExerciseAsync(owner.Client);
+        var exerciseId = await CreateExerciseAsync(factory);
         var workoutResponse = await owner.Client.PostAsJsonAsync(
             "/api/workouts",
             new

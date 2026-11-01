@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Xunit;
 using WorkoutApi.DTOs;
+using WorkoutApi.Tests.Helpers;
 
 namespace WorkoutApi.Tests.Controllers.Exercise;
 
@@ -11,7 +12,8 @@ public class UpdateExerciseTests
     public async Task UpdateExercise_ChangesExercise()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var createDto = new CreateExerciseDto
         {
@@ -57,7 +59,8 @@ public class UpdateExerciseTests
     public async Task UpdateExercise_WhenIdDoesNotExist_ReturnsNotFound()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var dto = new CreateExerciseDto
         {

@@ -39,9 +39,9 @@ builder.Services.AddSwaggerGen(options =>
     });
     
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-{
-    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-});
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+    });
 });
 
 builder.Services.AddDataProtection();
@@ -56,6 +56,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     options.Password.RequireNonAlphanumeric = true;
 
 })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<WorkoutContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
@@ -81,12 +82,17 @@ builder.Services
                 Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero,
-            NameClaimType = ClaimTypes.Name
+            NameClaimType = ClaimTypes.Name,
+            RoleClaimType = ClaimTypes.Role
         };
     });
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+await IdentitySeed.SeedAsync(
+    app.Services,
+    app.Configuration);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

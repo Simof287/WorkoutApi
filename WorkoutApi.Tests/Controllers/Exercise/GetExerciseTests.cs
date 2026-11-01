@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Xunit;
 using WorkoutApi.DTOs;
 using System.Text.Json;
+using WorkoutApi.Tests.Helpers;
 
 namespace WorkoutApi.Tests.Controllers.Exercise;
 
@@ -26,7 +27,8 @@ public class GetExerciseTests
     public async Task GetExercise_WhenIdDoesNotExist_ReturnsNotFound()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var response = await client.GetAsync("/api/exercises/999");
 
@@ -38,7 +40,8 @@ public class GetExerciseTests
     public async Task GetExercises_WithoutParameters_ReturnsFirstPage()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         
         for (var i = 1; i <= 12; i++)
@@ -60,7 +63,8 @@ public class GetExerciseTests
     public async Task GetExercises_WithCustomPageSize_ReturnsRequestedNumberOfItems()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
     
         for (var i = 1; i <= 5; i++)
         {
@@ -79,7 +83,8 @@ public class GetExerciseTests
     public async Task GetExercises_SecondPage_ReturnsDifferentItems()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
     
         for (var i = 1; i <= 5; i++)
         {
@@ -112,7 +117,8 @@ public class GetExerciseTests
     public async Task GetExercises_WithMuscleGroup_FiltersBeforePagination()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
     
         for (var i = 1; i <= 3; i++)
         {
@@ -145,7 +151,8 @@ public class GetExerciseTests
     public async Task GetExercises_WithUnknownMuscleGroup_ReturnsEmptyPage()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
     
         await CreateExerciseAsync(client, "Squat", "Gambe");
         var response = await client.GetAsync(

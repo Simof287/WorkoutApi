@@ -15,18 +15,10 @@ public class UpdateWorkoutTests
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
 
-        var exerciseResponse = await client.PostAsJsonAsync(
-        "/api/exercises",
-        new
-        {
-            name = "Squat",
-            muscleGroup = "Legs"
-        });
-        exerciseResponse.EnsureSuccessStatusCode();
-
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
-
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Squat",
+            "Legs");
 
         var workoutResponse = await client.PostAsJsonAsync(
             "/api/workouts",
@@ -38,7 +30,7 @@ public class UpdateWorkoutTests
                 {
                     new
                     {
-                        exerciseId = exercise!.Id,
+                        exerciseId = exercise.Id,
                         order = 1,
                         sets = new[]
                         {
@@ -84,18 +76,10 @@ public class UpdateWorkoutTests
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
 
-        var exerciseResponse = await client.PostAsJsonAsync(
-        "/api/exercises",
-        new
-        {
-            name = "Squat",
-            muscleGroup = "Legs"
-        });
-        exerciseResponse.EnsureSuccessStatusCode();
-
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
-
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Squat",
+            "Legs");
 
         var workoutResponse = await client.PostAsJsonAsync(
             "/api/workouts",
@@ -107,7 +91,7 @@ public class UpdateWorkoutTests
                 {
                     new
                     {
-                        exerciseId = exercise!.Id,
+                        exerciseId = exercise.Id,
                         order = 1,
                         sets = new[]
                         {
@@ -151,16 +135,10 @@ public class UpdateWorkoutTests
         using var factory = new CustomWebApplicationFactory();
         using var testClient = await AuthenticatedTestClient.CreateAsync(factory);
         var client = testClient.Client;
-        var exerciseResponse = await client.PostAsJsonAsync(
-        "/api/exercises",
-        new
-        {
-            name = "Squat",
-            muscleGroup = "Legs"
-        });
-        exerciseResponse.EnsureSuccessStatusCode();
-        var exercise = await exerciseResponse.Content
-            .ReadFromJsonAsync<ExerciseResponseDto>();
+        var exercise = await ExerciseTestData.CreateThroughApiAsync(
+            factory,
+            "Squat",
+            "Legs");
         var workoutResponse = await client.PostAsJsonAsync(
             "/api/workouts",
             new
@@ -171,7 +149,7 @@ public class UpdateWorkoutTests
                 {
                     new
                     {
-                        exerciseId = exercise!.Id,
+                        exerciseId = exercise.Id,
                         order = 1,
                         sets = new[]
                         {

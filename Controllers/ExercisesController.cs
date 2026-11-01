@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkoutApi.Models;
 using WorkoutApi.DTOs;
 using WorkoutApi.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WorkoutApi.Controllers
 {
@@ -82,7 +83,7 @@ namespace WorkoutApi.Controllers
             }
             return Ok(ToResponseDto(exercise));
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<ExerciseResponseDto>> Create(
             CreateExerciseDto dto,
@@ -100,6 +101,7 @@ namespace WorkoutApi.Controllers
             return CreatedAtAction(nameof(GetById),new { id = exercise.Id },ToResponseDto(exercise));
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(
             int id,
@@ -116,6 +118,8 @@ namespace WorkoutApi.Controllers
             await _context.SaveChangesAsync(cancellationToken);
             return NoContent();
         }
+
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(
             int id,

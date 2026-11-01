@@ -21,6 +21,15 @@ public sealed class AuthenticatedTestClient : IDisposable
 
     public static async Task<AuthenticatedTestClient> CreateAsync(
         CustomWebApplicationFactory factory)
+        => await CreateAsync(factory, isAdmin: false);
+
+    public static async Task<AuthenticatedTestClient> CreateAdminAsync(
+        CustomWebApplicationFactory factory)
+        => await CreateAsync(factory, isAdmin: true);
+
+    private static async Task<AuthenticatedTestClient> CreateAsync(
+        CustomWebApplicationFactory factory,
+        bool isAdmin)
     {
         var client = factory.CreateClient();
 
@@ -30,6 +39,33 @@ public sealed class AuthenticatedTestClient : IDisposable
             var userManager = scope.ServiceProvider
                 .GetRequiredService<UserManager<ApplicationUser>>();
             var user = await UserTestData.CreateAsync(userManager);
+
+            if (isAdmin)
+            {
+                var roleManager = scope.ServiceProvider
+                    .GetRequiredService<RoleManager<IdentityRole>>();
+
+                if (!await roleManager.RoleExistsAsync("Admin"))
+                {
+                    var createRoleResult = await roleManager.CreateAsync(
+                        new IdentityRole("Admin"));
+                    if (!createRoleResult.Succeeded)
+                    {
+                        throw new InvalidOperationException(
+                            "Could not create the Admin role for the test.");
+                    }
+                }
+
+                var addRoleResult = await userManager.AddToRoleAsync(
+                    user,
+                    "Admin");
+                if (!addRoleResult.Succeeded)
+                {
+                    throw new InvalidOperationException(
+                        "Could not assign the Admin role to the test user.");
+                }
+            }
+
             var loginResponse = await client.PostAsJsonAsync(
                 "/api/auth/login",
                 new LoginRequestDto

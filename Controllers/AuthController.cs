@@ -104,13 +104,19 @@ public class AuthController : ControllerBase
 
         var expiresAt = DateTime.UtcNow.AddMinutes(
             _jwtOptions.TokenLifetimeMinutes);
-        var claims = new[]
+
+        var roles = await _userManager.GetRolesAsync(user);
+
+        var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id),
             new Claim(ClaimTypes.NameIdentifier, user.Id),
             new Claim(ClaimTypes.Name, user.UserName ?? user.Email ?? user.Id),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_jwtOptions.SigningKey)),

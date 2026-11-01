@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Xunit;
 using WorkoutApi.DTOs;
+using WorkoutApi.Tests.Helpers;
 
 namespace WorkoutApi.Tests.Controllers.Exercise;
 
@@ -11,7 +12,8 @@ public class CreateExerciseTests
     public async Task CreateExercise_ReturnsCreatedAndCanBeRetrieved()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var dto = new CreateExerciseDto
         {
@@ -40,7 +42,8 @@ public class CreateExerciseTests
     public async Task CreateExercise_WithEmptyName_ReturnsBadRequest()
     {
         using var factory = new CustomWebApplicationFactory();
-        using var client = factory.CreateClient();
+        using var testClient = await AuthenticatedTestClient.CreateAdminAsync(factory);
+        var client = testClient.Client;
 
         var dto = new CreateExerciseDto
         {
