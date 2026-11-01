@@ -32,8 +32,8 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType<RegisterResponseDto>(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RegisterResponseDto>> Register(
         RegisterRequestDto request,
         CancellationToken cancellationToken)
@@ -60,10 +60,11 @@ public class AuthController : ControllerBase
         if (result.Errors.Any(error =>
                 error.Code is "DuplicateEmail" or "DuplicateUserName"))
         {
-            return Conflict(Problem(
+            return Problem(
+                type: "urn:workout-api:problems:conflict",
                 title: "Account already exists",
                 detail: "The email address or username is already in use.",
-                statusCode: StatusCodes.Status409Conflict));
+                statusCode: StatusCodes.Status409Conflict);
         }
 
         var errors = result.Errors
@@ -80,13 +81,23 @@ public class AuthController : ControllerBase
                 group => group.Key,
                 group => group.Select(error => error.Description).ToArray());
 
-        return BadRequest(new ValidationProblemDetails(errors));
+        var validationProblem = new ValidationProblemDetails(errors)
+        {
+            Type = "urn:workout-api:problems:validation-error",
+            Title = "Registration validation failed",
+            Status = StatusCodes.Status400BadRequest,
+            Instance = HttpContext.Request.Path
+        };
+        validationProblem.Extensions["traceId"] = HttpContext.TraceIdentifier;
+
+        return BadRequest(validationProblem);
     }
 
     [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType<LoginResponseDto>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<LoginResponseDto>> Login(
         LoginRequestDto request)
     {

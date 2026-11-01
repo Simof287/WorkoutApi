@@ -31,6 +31,7 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<PagedResponseDto<ExerciseResponseDto>>> GetAll(
             [FromQuery] string? muscleGroup,
             CancellationToken cancellationToken,
@@ -72,6 +73,7 @@ namespace WorkoutApi.Controllers
         }
 
         [HttpGet("{id}")]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ExerciseResponseDto>> GetById(
             int id,
             CancellationToken cancellationToken)
@@ -85,6 +87,9 @@ namespace WorkoutApi.Controllers
         }
         [Authorize(Roles = "Admin")]
         [HttpPost]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ExerciseResponseDto>> Create(
             CreateExerciseDto dto,
             CancellationToken cancellationToken)
@@ -103,6 +108,10 @@ namespace WorkoutApi.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
+        [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<ActionResult> Update(
             int id,
             CancellationToken cancellationToken,
@@ -121,6 +130,9 @@ namespace WorkoutApi.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(
             int id,
             CancellationToken cancellationToken)

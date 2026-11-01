@@ -24,6 +24,8 @@ public class WorkoutsController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<WorkoutResponseDto>> Create(
         CreateWorkoutDto dto,
         CancellationToken cancellationToken)
@@ -38,10 +40,11 @@ public class WorkoutsController : ControllerBase
         
         if (orders.Distinct().Count() != orders.Count)
         {
-            return BadRequest(new
-            {
-                message = "L'ordine degli esercizi deve essere univoco."
-            });
+            return Problem(
+                type: "urn:workout-api:problems:bad-request",
+                title: "Invalid workout",
+                detail: "Exercise order values must be unique.",
+                statusCode: StatusCodes.Status400BadRequest);
         }
         var exerciseIds = dto.Exercises
             .Select(e => e.ExerciseId)
@@ -55,10 +58,11 @@ public class WorkoutsController : ControllerBase
 
         if (existingIds.Count != exerciseIds.Count)
         {
-            return BadRequest(new
-            {
-                message = "Uno o più esercizi non esistono."
-            });
+            return Problem(
+                type: "urn:workout-api:problems:bad-request",
+                title: "Invalid workout",
+                detail: "One or more exercises do not exist.",
+                statusCode: StatusCodes.Status400BadRequest);
         }
 
         var workout = new Workout
@@ -95,6 +99,8 @@ public class WorkoutsController : ControllerBase
             });
     }
     [HttpGet]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<PagedResponseDto<WorkoutResponseDto>>>GetAll(
         CancellationToken cancellationToken,
         [FromQuery, Range(1, int.MaxValue)] int page = 1,
@@ -160,6 +166,8 @@ public class WorkoutsController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<WorkoutResponseDto>> GetById(
         int id,
         CancellationToken cancellationToken)
@@ -204,6 +212,9 @@ public class WorkoutsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Update(
         int id,
         UpdateWorkoutDto dto,
@@ -232,6 +243,8 @@ public class WorkoutsController : ControllerBase
     }
     
     [HttpDelete("{id}")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(
         int id,
         CancellationToken cancellationToken)

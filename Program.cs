@@ -1,10 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using WorkoutApi.Data;
 using WorkoutApi.Models;
 using WorkoutApi.Options;
@@ -18,11 +20,57 @@ builder.Services.AddDbContext<WorkoutContext>(options =>
     options.UseSqlite(
         builder.Configuration.GetConnectionString("WorkoutDatabase")));
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errors = context.ModelState
+                .Where(entry => entry.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    entry => JsonNamingPolicy.CamelCase.ConvertName(entry.Key),
+                    entry => entry.Value!.Errors
+                        .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                            ? "The supplied value is invalid."
+                            : error.ErrorMessage)
+                        .ToArray());
+
+            var details = new ValidationProblemDetails(errors)
+            {
+                Type = "urn:workout-api:problems:validation-error",
+                Title = "Validation failed",
+                Status = StatusCodes.Status400BadRequest,
+                Instance = context.HttpContext.Request.Path
+            };
+            details.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+
+            return new BadRequestObjectResult(details);
+        };
+    });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-builder.Services.AddProblemDetails();
+builder.Services.AddProblemDetails(options =>
+{
+    options.CustomizeProblemDetails = context =>
+    {
+        var status = context.ProblemDetails.Status
+            ?? context.HttpContext.Response.StatusCode;
+
+        context.ProblemDetails.Type = status switch
+        {
+            StatusCodes.Status400BadRequest => "urn:workout-api:problems:bad-request",
+            StatusCodes.Status401Unauthorized => "urn:workout-api:problems:unauthorized",
+            StatusCodes.Status403Forbidden => "urn:workout-api:problems:forbidden",
+            StatusCodes.Status404NotFound => "urn:workout-api:problems:not-found",
+            StatusCodes.Status409Conflict => "urn:workout-api:problems:conflict",
+            _ => "urn:workout-api:problems:internal-error"
+        };
+
+        context.ProblemDetails.Extensions["traceId"] =
+            context.HttpContext.TraceIdentifier;
+    };
+});
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -103,6 +151,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseExceptionHandler();
+app.UseStatusCodePages();
 
 app.UseHttpsRedirection();
 
